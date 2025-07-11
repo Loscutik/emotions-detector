@@ -1,0 +1,13 @@
+jupyter
+pydantic
+numpy==2.0
+pandas
+matplotlib
+seaborn
+tabulate
+pip==24.0
+scikit-learn==1.5.1
+tensorflow==2.19.0
+keras==3.6.0
+tf_keras
+opencv-python==4.10.0.84
