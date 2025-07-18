@@ -11,3 +11,4 @@ tensorflow==2.19.0
 keras==3.6.0
 tf_keras
 opencv-python==4.10.0.84
+pyyaml

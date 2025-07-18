@@ -1,5 +1,6 @@
 from typing import Iterable, Callable
-
+from pathlib import Path
+import yaml
 
 import numpy as np
 import tensorflow as tf
@@ -8,7 +9,20 @@ from pydantic import BaseModel
 
 import cv2
 
+data_dir = Path("../data")
 
+def read_configuration(config_path:str|Path)->tuple[dict, dict, list]:
+    with open(config_path, "r") as file:
+        data = yaml.safe_load(file)
+        CONFIG = data['config']
+        PATHS = data['paths']
+        EMOTIONS = data['emotions']
+    for key, value in PATHS.items():
+        if '_dir' in key:
+            PATHS[key] = Path(value)
+            if not PATHS[key].exists():
+                raise FileNotFoundError(f"Path {PATHS[key]} does not exist. Please check the config file.")
+    return CONFIG, PATHS, EMOTIONS
 
 img_size=48  # or whatever size your images should be
 def normalize_images(imgs:np.ndarray) -> np.ndarray:
