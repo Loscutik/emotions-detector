@@ -1,0 +1,25 @@
+config:
+  img_width: 48
+  img_height: 48
+  img_dtype: float32
+  num_classes: 7
+  batch_size: 32
+  init_learning_rate: 0.005
+
+paths:
+  res_dir: ../results
+  model_path: ../results/final_emotion_model.keras
+  tflite_model_path: ../results/quantized_model.tflite
+  log_dir: logs
+  checkpoint_dir: checkpoints
+  checkpoint_prefix_weights: cp_weights
+  checkpoint_prefix_model: cp_model
+
+emotions: 
+  - Angry
+  - Disgust
+  - Fear
+  - Happy
+  - Sad
+  - Surprise
+  - Neutral
