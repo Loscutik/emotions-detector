@@ -1,7 +1,15 @@
+import numpy as np
+
+import keras
 import tensorflow as tf
 from tensorflow.keras.layers import Input, Add, Dense, Activation, Flatten, Conv2D, DepthwiseConv2D, AveragePooling2D, GlobalAveragePooling2D, MaxPooling2D, BatchNormalization, Dropout, RandomFlip, RandomRotation
 from tensorflow.keras import Model
 from tensorflow.keras.initializers import random_uniform, glorot_uniform
+
+from plotting import plot_confusion_matrix, plot_to_image
+
+
+import sklearn.metrics
 
 def data_augmenter():
     '''
@@ -88,7 +96,7 @@ def bottleneck_block(X, f, filters, s = 1,expansion_rate=5, initializer=glorot_u
 
     return X
 
-def create_MobNetLike(input_shape, classes, data_augmentation=None, first_conv={}, stages={}, last_expantion=4, dropout_rate=0.1, normalization=True, kernel_regularizer=None, addition_FCs=0, name='mobNet'):
+def create_MobNetLike(input_shape, classes, data_augmentation=None, first_conv={}, stages={}, last_expantion=4, dropout_rate=0.1, fc_dropout_rate=0.2, normalization=True, kernel_regularizer=None, addition_FCs=0, name='mobNet'):
     """
     creates a model of residual network using triple convolutional and identity blocks 
 
@@ -153,7 +161,7 @@ def create_MobNetLike(input_shape, classes, data_augmentation=None, first_conv={
         neurons = X.shape[1] 
         for  i in range(addition_FCs):
             X = Dense(neurons, activation='relu', kernel_initializer = glorot_uniform(), kernel_regularizer=kernel_regularizer, name=f'FC{i}')(X)
-            X = Dropout(0.2, name=f'FC{i}_dropout')(X)
+            X = Dropout(fc_dropout_rate, name=f'FC{i}_dropout')(X)
     X = Dense(classes, activation='softmax', kernel_initializer = glorot_uniform(), name=f'softmax-{classes}')(X)
         
     # Create model
@@ -260,7 +268,7 @@ def pooling_block(X, f, filters, s = 2, initializer=glorot_uniform, normalizatio
     
     return X
     
-def create_ResNet2(input_shape, classes, data_augmentation=None, stages={},last_window_expantion=2, dropout_rate=0.1, normalization=True, kernel_regularizer=None, addition_FCs=0, name='resNet2'):
+def create_ResNet2(input_shape, classes, data_augmentation=None, stages={}, last_window_expantion=2, dropout_rate=0.1, fc_dropout_rate=0.4, normalization=True, kernel_regularizer=None, addition_FCs=0, name='resNet2'):
     """
     creates a model of residual network using double convolutional and identity blocks 
 
@@ -321,10 +329,31 @@ def create_ResNet2(input_shape, classes, data_augmentation=None, stages={},last_
         neurons = X.shape[1] 
         for  i in range(addition_FCs):
             X = Dense(neurons, activation='relu', kernel_initializer = glorot_uniform(), kernel_regularizer=kernel_regularizer, name=f'FC{i}')(X)
-            X = Dropout(0.4, name=f'FC{i}_dropout')(X)
+            X = Dropout(fc_dropout_rate, name=f'FC{i}_dropout')(X)
     X = Dense(classes, activation='softmax', kernel_initializer = glorot_uniform(), name=f'softmax-{classes}')(X)
         
     # Create model
     model = Model(inputs = X_input, outputs = X, name=name)
 
     return model    
+
+class ConfusingMatrixLog(keras.callbacks.Callback):
+    def __init__(self, x_validation, y_validation, class_names=None, log_dir='CM'):
+        self.x_validation = x_validation
+        self.y_validation = y_validation
+        self.class_names = class_names
+        self.file_writer_cm = tf.summary.create_file_writer(log_dir)
+        
+    def on_epoch_end(self, epoch, logs=None):
+      test_pred_raw = self.model.predict(self.x_validation) #probabilies
+      test_pred = np.argmax(test_pred_raw, axis=1) #classes
+    
+      # Calculate the confusion matrix.
+      cm = sklearn.metrics.confusion_matrix(self.y_validation, test_pred)
+      # Log the confusion matrix as an image summary.
+      figure = plot_confusion_matrix(cm, class_names=self.class_names)
+      cm_image = plot_to_image(figure)
+    
+      # Log the confusion matrix as an image summary.
+      with self.file_writer_cm.as_default():
+        tf.summary.image("epoch_confusion_matrix", cm_image, step=epoch)

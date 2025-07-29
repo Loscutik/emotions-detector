@@ -1,19 +1,20 @@
-config:
+input: 
   img_width: 48
   img_height: 48
   img_dtype: float32
   num_classes: 7
   batch_size: 32
-  init_learning_rate: 0.005
 
-paths:
+paths: 
   res_dir: ../results
   model_path: ../results/final_emotion_model.keras
   tflite_model_path: ../results/quantized_model.tflite
   log_dir: logs
   checkpoint_dir: checkpoints
-  checkpoint_prefix_weights: cp_weights
-  checkpoint_prefix_model: cp_model
+
+checkpoint_prefixes:
+  weights: cp_weights
+  model: cp_model
 
 emotions: 
   - Angry
@@ -23,3 +24,40 @@ emotions:
   - Sad
   - Surprise
   - Neutral
+
+model: 
+  reg_l2: 0.001 
+  mobnet: 
+    first_conv: {f: 3, filters: 16, s: 2}
+    stages: 
+      num_blocks: [1, 2, 3, 4, 3, 3, 1, 1]
+      f: [3, 3, 3, 3, 3, 3, 3, 3]
+      filters: [16, 24, 32, 64, 96, 160, 320, 480]
+      s: [1, 1, 1, 2, 1, 2, 1, 1]
+      expansion_rate: [3, 5, 5, 5, 5, 5, 5, 5]
+    last_expantion: 4
+    dropout_rate: 0.1
+    fc_dropout_rate: 0.2
+    addition_FCs: 2
+    normalization: true
+    
+  resnet2: 
+    stages: 
+      identity_blocks: [2, 2, 3, 2]
+      f: [5, 3, 3, 3]
+      filters: [16, 32, 64, 128]
+      s: [2, 2, 2, 2]
+    last_window_expantion: 2
+    dropout_rate: 0.1
+    fc_dropout_rate: 0.4
+    addition_FCs: 2
+    normalization: true
+
+
+compile: 
+  optimizer: 
+    name: adam
+    learning_rate: 0.005
+  loss: sparse_categorical_crossentropy
+  metrics: 
+    - accuracy

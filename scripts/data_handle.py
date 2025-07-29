@@ -14,15 +14,11 @@ data_dir = Path("../data")
 def read_configuration(config_path:str|Path)->tuple[dict, dict, list]:
     with open(config_path, "r") as file:
         data = yaml.safe_load(file)
-        CONFIG = data['config']
-        PATHS = data['paths']
-        EMOTIONS = data['emotions']
-    for key, value in PATHS.items():
-        if '_dir' in key:
-            PATHS[key] = Path(value)
-            if not PATHS[key].exists():
-                raise FileNotFoundError(f"Path {PATHS[key]} does not exist. Please check the config file.")
-    return CONFIG, PATHS, EMOTIONS
+    for key, value in data['paths'].items():
+        data['paths'][key] = Path(value)
+        if '_dir' in key and not data['paths'][key].exists():
+            raise FileNotFoundError(f"Path {data['paths'][key]} does not exist. Please check the config file.")
+    return data
 
 img_size=48  # or whatever size your images should be
 def normalize_images(imgs:np.ndarray) -> np.ndarray:
